@@ -1,87 +1,99 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package com.agribridge.controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.*;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 
-/**
- *
- * @author HP
- */
 @WebServlet(name = "RegisterServlet", urlPatterns = {"/RegisterServlet"})
 public class RegisterServlet extends HttpServlet {
 
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet RegisterServlet</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet RegisterServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-        }
-    }
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/Egerton_AgriBridge_Hub?useSSL=false&serverTimezone=UTC";
+    private static final String DB_USER = "root";
+    private static final String DB_PASSWORD = "YourStrongPassword123!";
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-    }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+
+        String fullName = request.getParameter("full_name");
+        String email = request.getParameter("email");
+        String phone = request.getParameter("phone");
+        String password = request.getParameter("password");
+        String roleName = request.getParameter("role_name");
+        String terms = request.getParameter("terms");
+
+        response.setContentType("text/html;charset=UTF-8");
+        PrintWriter out = response.getWriter();
+
+        try {
+            // 🔹 VALIDATION
+            if (fullName.isEmpty() || email.isEmpty() || password.isEmpty() || roleName.isEmpty()) {
+                out.println("<h3 style='color:red;'>All fields are required!</h3>");
+                return;
+            }
+
+            if (terms == null) {
+                out.println("<h3 style='color:red;'>Accept terms to continue!</h3>");
+                return;
+            }
+
+            // 🔹 CONNECT DB
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+
+            // 🔹 CHECK EMAIL
+            String checkSql = "SELECT user_id FROM users WHERE email = ?";
+            PreparedStatement checkStmt = conn.prepareStatement(checkSql);
+            checkStmt.setString(1, email);
+            ResultSet checkRs = checkStmt.executeQuery();
+
+            if (checkRs.next()) {
+                out.println("<h3 style='color:red;'>Email already exists!</h3>");
+                return;
+            }
+
+            // 🔹 GET ROLE ID (IMPORTANT FIX)
+            String roleSql = "SELECT role_id FROM roles WHERE role_name = ?";
+            PreparedStatement roleStmt = conn.prepareStatement(roleSql);
+            roleStmt.setString(1, roleName);
+
+            ResultSet roleRs = roleStmt.executeQuery();
+
+            int roleId;
+            if (roleRs.next()) {
+                roleId = roleRs.getInt("role_id");
+            } else {
+                out.println("<h3 style='color:red;'>Selected role does not exist!</h3>");
+                return;
+            }
+
+            // 🔹 INSERT USER
+            String insertSql = "INSERT INTO users (name, email, phone, password_hash, role_id) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement stmt = conn.prepareStatement(insertSql);
+
+            stmt.setString(1, fullName);
+            stmt.setString(2, email);
+            stmt.setString(3, phone);
+            stmt.setString(4, password); // ⚠️ hash later
+            stmt.setInt(5, roleId);
+
+            int rows = stmt.executeUpdate();
+
+            if (rows > 0) {
+                response.sendRedirect("login.jsp");
+            } else {
+                out.println("<h3 style='color:red;'>Registration failed!</h3>");
+            }
+
+            conn.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            out.println("<h3 style='color:red;'>Error: " + e.getMessage() + "</h3>");
+        }
     }
-
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
 }
