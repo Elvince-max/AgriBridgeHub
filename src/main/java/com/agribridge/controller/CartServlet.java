@@ -1,87 +1,104 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package com.agribridge.controller;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import com.agribridge.model.Cart;
+import com.agribridge.model.CartItem;
+import com.google.gson.Gson;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
-/**
- *
- * @author HP
- */
-@WebServlet(name = "CartServlet", urlPatterns = {"/CartServlet"})
+@WebServlet("/CartServlet")
 public class CartServlet extends HttpServlet {
 
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet CartServlet</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet CartServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String action = req.getParameter("action");
+            HttpSession session = req.getSession();
+            Cart cart = (Cart) session.getAttribute("cart");
+            if (cart == null) {
+                cart = new Cart();
+                session.setAttribute("cart", cart);
+            }
+
+            if ("add".equals(action)) {
+                int productId = Integer.parseInt(req.getParameter("productId"));
+                String name = req.getParameter("name");
+                double price = Double.parseDouble(req.getParameter("price"));
+                int quantity = Integer.parseInt(req.getParameter("quantity"));
+                String imageUrl = req.getParameter("imageUrl");
+
+                CartItem item = new CartItem(productId, name, price, quantity, imageUrl);
+                cart.addItem(item);
+
+                response.put("success", true);
+                response.put("cartSize", cart.getItems().size());
+                response.put("cartTotal", cart.getTotal());
+            }
+            else if ("update".equals(action)) {
+                int productId = Integer.parseInt(req.getParameter("productId"));
+                int quantity = Integer.parseInt(req.getParameter("quantity"));
+                cart.updateQuantity(productId, quantity);
+                resp.sendRedirect("cart.jsp");
+                return;
+            }
+            else if ("remove".equals(action)) {
+                int productId = Integer.parseInt(req.getParameter("productId"));
+                cart.removeItem(productId);
+                resp.sendRedirect("cart.jsp");
+                return;
+            }
+            else if ("clear".equals(action)) {
+                cart.clear();
+                resp.sendRedirect("cart.jsp");
+                return;
+            }
+            else {
+                response.put("success", false);
+                response.put("error", "Unknown action");
+            }
+
+            new Gson().toJson(response, resp.getWriter());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            resp.setStatus(500);
+            new Gson().toJson(response, resp.getWriter());
         }
     }
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String action = req.getParameter("action");
+        HttpSession session = req.getSession();
+        Cart cart = (Cart) session.getAttribute("cart");
+        if (cart == null) {
+            cart = new Cart();
+            session.setAttribute("cart", cart);
+        }
+
+        if ("clear".equals(action)) {
+            cart.clear();
+        } else if ("remove".equals(action)) {
+            int productId = Integer.parseInt(req.getParameter("productId"));
+            cart.removeItem(productId);
+        } else if ("update".equals(action)) {
+            int productId = Integer.parseInt(req.getParameter("productId"));
+            int quantity = Integer.parseInt(req.getParameter("quantity"));
+            cart.updateQuantity(productId, quantity);
+        }
+        resp.sendRedirect("cart.jsp");
     }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-    }
-
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
 }

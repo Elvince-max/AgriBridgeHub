@@ -10,7 +10,95 @@
     <!-- Bootstrap 5 + Icons + Google Fonts -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link href="css/orderConfirmation.css" rel="stylesheet" type="text/css"/>
+    <style>
+        body {
+            background: #f5f3ef;  /* soft cream background */
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        .confirmation-card {
+            border: none;
+            border-radius: 28px;
+            background: #ffffff;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        .brand-green {
+            color: #1e4a2f;
+        }
+        .bg-brand-green {
+            background-color: #1e4a2f;
+        }
+        .btn-track {
+            background-color: #1e4a2f;
+            color: white;
+            border-radius: 40px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .btn-track:hover {
+            background-color: #0f331f;
+            color: white;
+        }
+        .btn-home {
+            background-color: #e9ecef;
+            color: #2d3e2b;
+            border-radius: 40px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .btn-home:hover {
+            background-color: #dee2e6;
+            color: #1e4a2f;
+        }
+        .delivery-panel {
+            background: #fefaf5;
+            border-radius: 24px;
+            padding: 1.5rem;
+            height: 100%;
+        }
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #eae2d7;
+            padding: 12px 0;
+        }
+        .total-amount {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1e4a2f;
+        }
+        .footer-link {
+            text-decoration: none;
+            font-size: 0.8rem;
+            color: #6c757d;
+            transition: color 0.2s;
+        }
+        .footer-link:hover {
+            color: #1e4a2f;
+            text-decoration: underline;
+        }
+        .checkmark-circle {
+            background-color: #e9f5e9;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .checkmark-circle i {
+            font-size: 2.5rem;
+            color: #1e4a2f;
+        }
+        @media (max-width: 768px) {
+            .confirmation-card .row {
+                flex-direction: column-reverse;
+            }
+        }
+    </style>
 </head>
 <body>
 

@@ -1,6 +1,20 @@
 <%@ page contentType="text/html" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ page import="com.agribridge.model.Cart" %>
+<%
+    HttpSession sessionCheck = request.getSession(false);
+    if (sessionCheck == null || sessionCheck.getAttribute("userId") == null) {
+        response.sendRedirect("login.jsp?error=Please login to proceed to checkout");
+        return;
+    }
+    Cart cart = (Cart) sessionCheck.getAttribute("cart");
+    if (cart == null || cart.getItems().isEmpty()) {
+        response.sendRedirect("cart.jsp?error=Your cart is empty");
+        return;
+    }
+%>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,9 +42,13 @@
                     <a href="#" class="text-decoration-none text-secondary">Support</a>
                 </div>
             </div>
-            <div>
+            <!-- ✅ Functional cart icon with badge -->
+            <a href="cart.jsp" class="text-decoration-none text-secondary position-relative">
                 <i class="bi bi-cart3 fs-5"></i>
-            </div>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem;">
+                    ${not empty cart ? cart.items.size() : 0}
+                </span>
+            </a>
         </div>
 
         <!-- Main heading -->
@@ -117,9 +135,6 @@
                         </div>
                     </div>
 
-                    <!-- Hidden fields for OrderServlet (fullName, phone, deliverySlot) -->
-                    <input type="hidden" name="fullName" id="fullNameHidden">
-                    <input type="hidden" name="phone" id="phoneHidden">
                     <button type="submit" class="btn btn-primary-custom w-100 mt-2">Place Order</button>
                 </form>
             </div>
@@ -131,10 +146,9 @@
                     
                     <c:choose>
                         <c:when test="${empty cart or empty cart.items}">
-                            <div class="alert alert-warning">Your cart is empty. <a href="products.jsp">Continue shopping</a></div>
+                            <div class="alert alert-warning">Your cart is empty. <a href="products">Continue shopping</a></div>
                         </c:when>
                         <c:otherwise>
-                            <!-- Cart items -->
                             <div>
                                 <c:forEach var="item" items="${cart.items}">
                                     <div class="order-item">
@@ -146,19 +160,14 @@
                                     </div>
                                 </c:forEach>
                             </div>
-                            <!-- Totals -->
                             <div class="mt-3 pt-2">
                                 <div class="d-flex justify-content-between mb-1">
                                     <span>Subtotal</span>
                                     <span>KES <fmt:formatNumber value="${cart.total}" pattern="#,##0.00"/></span>
                                 </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Delivery Fee</span>
-                                    <span>KES 150.00</span>
-                                </div>
                                 <div class="d-flex justify-content-between border-top pt-2 mt-2">
                                     <span class="fw-bold fs-6">Total</span>
-                                    <span class="total-amount">KES <fmt:formatNumber value="${cart.total + 150}" pattern="#,##0.00"/></span>
+                                    <span class="total-amount">KES <fmt:formatNumber value="${cart.total}" pattern="#,##0.00"/></span>
                                 </div>
                             </div>
                         </c:otherwise>
@@ -197,7 +206,6 @@
     </div>
 </div>
 
-<!-- JavaScript for slot selection, payment method, and copying fields to hidden inputs -->
 <script src="js/checkout.js" type="text/javascript"></script>
 </body>
 </html>

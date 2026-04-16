@@ -1,87 +1,54 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package com.agribridge.controller;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import com.agribridge.dao.UserDAO;
+import com.agribridge.model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import org.mindrot.jbcrypt.BCrypt;
 
-/**
- *
- * @author HP
- */
-@WebServlet(name = "LoginServlet", urlPatterns = {"/LoginServlet"})
+import java.io.IOException;
+
+@WebServlet("/LoginServlet")
 public class LoginServlet extends HttpServlet {
 
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet LoginServlet</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet LoginServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
+    private UserDAO userDAO = new UserDAO();
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String email = req.getParameter("email");
+        String password = req.getParameter("password");
+
+        if (email == null || password == null || email.trim().isEmpty() || password.trim().isEmpty()) {
+            resp.sendRedirect("login.jsp?error=missing");
+            return;
+        }
+
+        try {
+            User user = userDAO.getUserByEmail(email);
+            if (user == null) {
+                resp.sendRedirect("login.jsp?error=invalid");
+                return;
+            }
+
+            // Verify password against stored hash
+            if (BCrypt.checkpw(password, user.getPasswordHash())) {
+                // Login successful
+                HttpSession session = req.getSession();
+                session.setAttribute("userId", user.getUserId());
+                session.setAttribute("userName", user.getName());
+                session.setAttribute("userEmail", user.getEmail());
+                // If you have role_id column, store it as well
+                resp.sendRedirect("index.jsp");
+            } else {
+                resp.sendRedirect("login.jsp?error=invalid");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            resp.sendRedirect("login.jsp?error=server");
         }
     }
-
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-    }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-    }
-
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
 }
