@@ -1,6 +1,6 @@
 package com.agribridge.dao;
 
-import servlet.model.Payment;
+import com.agribridge.model.Payment;
 
 import java.sql.*;
 
