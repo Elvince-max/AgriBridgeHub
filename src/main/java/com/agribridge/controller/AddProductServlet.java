@@ -1,87 +1,72 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
-package com.agribridge.controller;
+// File: AddProductServlet.java
+package com.projectmanagement.controller;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
+import com.projectmanagement.dao.ProductDAO;
+import com.projectmanagement.model.Product;
+import java.io.File;
+import java.io.IOException;
+import java.sql.SQLException;
 
-/**
- *
- * @author HP
- */
-@WebServlet(name = "AddProductServlet", urlPatterns = {"/AddProductServlet"})
 public class AddProductServlet extends HttpServlet {
-
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+    private ProductDAO productDAO;
+    private static final String UPLOAD_DIR = "Uploads/images";
+    
+    @Override
+    public void init() {
+        productDAO = new ProductDAO();
+    }
+    
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet AddProductServlet</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet AddProductServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
+        
+        try {
+            String name = request.getParameter("productName");
+            String category = request.getParameter("category");
+            String description = request.getParameter("description");
+            double price = Double.parseDouble(request.getParameter("price"));
+            int stock = Integer.parseInt(request.getParameter("stockQty"));
+            
+            // Handle image upload
+            String imagePath = null;
+            Part filePart = request.getPart("productImage");
+            if (filePart != null && filePart.getSize() > 0) {
+                String fileName = System.currentTimeMillis() + "_" + filePart.getSubmittedFileName();
+                String uploadPath = getServletContext().getRealPath("") + File.separator + UPLOAD_DIR;
+                File uploadDir = new File(uploadPath);
+                if (!uploadDir.exists()) {
+                    uploadDir.mkdirs();
+                }
+                filePart.write(uploadPath + File.separator + fileName);
+                imagePath = UPLOAD_DIR + "/" + fileName;
+            }
+            
+            // Get checkbox values
+            boolean publicInCatalog = request.getParameter("publicInCatalog") != null;
+            boolean featuredProduct = request.getParameter("featuredProduct") != null;
+            
+            Product product = new Product();
+            product.setName(name);
+            product.setCategory(category);
+            product.setDescription(description);
+            product.setPrice(price);
+            product.setStock(stock);
+            product.setImagePath(imagePath);
+            product.setPublicInCatalog(publicInCatalog);
+            product.setFeaturedProduct(featuredProduct);
+            
+            productDAO.addProduct(product);
+            
+            response.sendRedirect(request.getContextPath() + "/products?message=Product added successfully&messageType=success");
+            
+        } catch (NumberFormatException | SQLException e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/addProduct.jsp?message=Error adding product&messageType=error");
         }
     }
-
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-    }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-    }
-
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
 }
