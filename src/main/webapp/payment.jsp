@@ -5,7 +5,7 @@
      request scope. The servlet already created and set it.
      EL expressions like ${payment.orderId} read from this bean.
      ══════════════════════════════════════════════════════════ --%>
-<jsp:useBean id="payment" class="com.agribridge.model.Payment" scope="request" />
+<jsp:useBean id="payment" class="servlet.model.Payment" scope="request" />
 
 <%-- JSTL tag libraries for <c:if> and <fmt:formatNumber> --%>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>

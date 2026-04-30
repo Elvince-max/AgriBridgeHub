@@ -1,13 +1,17 @@
 package com.agribridge.controller;
 
-import com.agribridge.dao.PaymentDAO;
-import com.agribridge.model.Payment;
-import com.agribridge.service.MpesaConfig;
-import com.agribridge.service.MpesaService;
+import com.agribridge.dao.PaymentDAO;            
+import com.agribridge.model.Payment;             
+import com.agribridge.services.MpesaConfig;      
+import com.agribridge.services.MpesaService;     
 
-import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.ServletException;          
+import jakarta.servlet.annotation.WebServlet;     
+import jakarta.servlet.http.HttpServlet;          
+import jakarta.servlet.http.HttpServletRequest;   
+import jakarta.servlet.http.HttpServletResponse;  
+import jakarta.servlet.http.HttpSession;          
+
 import java.io.IOException;
 
 /**
@@ -34,7 +38,7 @@ public class PaymentServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        // Guard: must be logged in (uncomment when Risper's login is ready)
+       
         // HttpSession session = req.getSession(false);
         // if (session == null || session.getAttribute("user") == null) {
         //     resp.sendRedirect(req.getContextPath() + "/login.jsp");

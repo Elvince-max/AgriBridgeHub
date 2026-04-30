@@ -124,9 +124,9 @@ public class PaymentDAO {
         }
         // Update these credentials to match your local MySQL setup
         return DriverManager.getConnection(
-            "jdbc:mysql://localhost:3306/agribridge_db",
+            "jdbc:mysql://localhost:3306/dairy_sales_db",
             "root",      //MySQL username
-            "elvince@2005"       //MySQL password
+            "admin"       //MySQL password
         );
     }
 }
