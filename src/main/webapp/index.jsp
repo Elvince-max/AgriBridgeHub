@@ -97,11 +97,11 @@
 </div>
 </div>
 <div class="flex items-center gap-4">
-<button class="p-2 text-stone-600 hover:text-[#00450D] active:scale-95 duration-200">
+<button  onclick="window.location.href='cart.jsp'"  class="p-2 text-stone-600 hover:text-[#00450D] active:scale-95 duration-200">
 <span class="material-symbols-outlined">shopping_cart</span>
 </button>
-<button class="p-2 text-stone-600 hover:text-[#00450D] active:scale-95 duration-200">
-<span class="material-symbols-outlined">account_circle</span>
+<button onclick="window.location.href='login.jsp'" class="p-2 text-stone-600 hover:text-[#00450D] active:scale-95 duration-200">
+    <span class="material-symbols-outlined">account_circle</span>
 </button>
 </div>
 </div>
@@ -122,7 +122,7 @@
                         Bridging Farm to Table, Digitally
                     </p>
 <!-- Updated Shop Now Button -->
-<button onclick="window.location.href='AddProductServlet" 
+<button onclick="window.location.href='products'" 
         class="bg-primary text-on-primary px-10 py-5 rounded-xl font-headline font-bold text-lg shadow-xl hover:bg-primary-container transition-all active:scale-95 flex items-center gap-3">
     Shop Now
     <span class="material-symbols-outlined">arrow_forward</span>

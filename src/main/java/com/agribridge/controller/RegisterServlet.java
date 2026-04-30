@@ -1,19 +1,21 @@
 package com.agribridge.controller;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.*;
-
+import com.agribridge.dao.UserDAO;
+import com.agribridge.model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.mindrot.jbcrypt.BCrypt;
+
+import java.io.IOException;
+import java.io.PrintWriter;
 
 @WebServlet(name = "RegisterServlet", urlPatterns = {"/RegisterServlet"})
 public class RegisterServlet extends HttpServlet {
 
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/Egerton_AgriBridge_Hub?useSSL=false&serverTimezone=UTC";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "YourStrongPassword123!";
+    private UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -23,73 +25,42 @@ public class RegisterServlet extends HttpServlet {
         String email = request.getParameter("email");
         String phone = request.getParameter("phone");
         String password = request.getParameter("password");
-        String roleName = request.getParameter("role_name");
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
         String terms = request.getParameter("terms");
 
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
 
+        // Validation
+        if (fullName == null || fullName.trim().isEmpty() ||
+            email == null || email.trim().isEmpty() ||
+            password == null || password.trim().isEmpty()) {
+            out.println("<h3 style='color:red;'>All fields are required!</h3>");
+            return;
+        }
+
+        if (terms == null) {
+            out.println("<h3 style='color:red;'>Accept terms to continue!</h3>");
+            return;
+        }
+
         try {
-            // 🔹 VALIDATION
-            if (fullName.isEmpty() || email.isEmpty() || password.isEmpty() || roleName.isEmpty()) {
-                out.println("<h3 style='color:red;'>All fields are required!</h3>");
-                return;
-            }
-
-            if (terms == null) {
-                out.println("<h3 style='color:red;'>Accept terms to continue!</h3>");
-                return;
-            }
-
-            // 🔹 CONNECT DB
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-
-            // 🔹 CHECK EMAIL
-            String checkSql = "SELECT user_id FROM users WHERE email = ?";
-            PreparedStatement checkStmt = conn.prepareStatement(checkSql);
-            checkStmt.setString(1, email);
-            ResultSet checkRs = checkStmt.executeQuery();
-
-            if (checkRs.next()) {
+            // Check if email already exists
+            if (userDAO.isEmailExists(email)) {
                 out.println("<h3 style='color:red;'>Email already exists!</h3>");
                 return;
             }
 
-            // 🔹 GET ROLE ID (IMPORTANT FIX)
-            String roleSql = "SELECT role_id FROM roles WHERE role_name = ?";
-            PreparedStatement roleStmt = conn.prepareStatement(roleSql);
-            roleStmt.setString(1, roleName);
+            // Create User object (password not hashed yet – you should hash it)
+            User user = new User(fullName, email, phone, hashedPassword);
 
-            ResultSet roleRs = roleStmt.executeQuery();
-
-            int roleId;
-            if (roleRs.next()) {
-                roleId = roleRs.getInt("role_id");
-            } else {
-                out.println("<h3 style='color:red;'>Selected role does not exist!</h3>");
-                return;
-            }
-
-            // 🔹 INSERT USER
-            String insertSql = "INSERT INTO users (name, email, phone, password_hash, role_id) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement stmt = conn.prepareStatement(insertSql);
-
-            stmt.setString(1, fullName);
-            stmt.setString(2, email);
-            stmt.setString(3, phone);
-            stmt.setString(4, password); // ⚠️ hash later
-            stmt.setInt(5, roleId);
-
-            int rows = stmt.executeUpdate();
-
-            if (rows > 0) {
+            // Register user
+            boolean success = userDAO.registerUser(user);
+            if (success) {
                 response.sendRedirect("login.jsp");
             } else {
                 out.println("<h3 style='color:red;'>Registration failed!</h3>");
             }
-
-            conn.close();
 
         } catch (Exception e) {
             e.printStackTrace();

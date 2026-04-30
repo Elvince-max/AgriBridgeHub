@@ -7,32 +7,31 @@ import java.util.Collections;
 
 public class Cart implements Serializable {
     private List<CartItem> items;
-    private double total;
 
     public Cart() {
         items = new ArrayList<>();
-        total = 0.0;
     }
 
     public List<CartItem> getItems() {
-        return Collections.unmodifiableList(items);
+        return items;
     }
 
     public double getTotal() {
-        recalculateTotal();
-        return total;
+        double sum = 0.0;
+        for (CartItem item : items) {
+            sum += item.getPrice() * item.getQuantity();
+        }
+        return sum;
     }
 
     public void addItem(CartItem newItem) {
-        for (CartItem item : items) {
-            if (item.getProductId() == newItem.getProductId()) {
-                item.setQuantity(item.getQuantity() + newItem.getQuantity());
-                recalculateTotal();
+        for (CartItem existing : items) {
+            if (existing.getProductId() == newItem.getProductId()) {
+                existing.setQuantity(existing.getQuantity() + newItem.getQuantity());
                 return;
             }
         }
         items.add(newItem);
-        recalculateTotal();
     }
 
     public void updateQuantity(int productId, int quantity) {
@@ -43,7 +42,6 @@ public class Cart implements Serializable {
                 } else {
                     item.setQuantity(quantity);
                 }
-                recalculateTotal();
                 return;
             }
         }
@@ -51,16 +49,14 @@ public class Cart implements Serializable {
 
     public void removeItem(int productId) {
         items.removeIf(item -> item.getProductId() == productId);
-        recalculateTotal();
     }
 
     public void clear() {
         items.clear();
-        total = 0.0;
     }
 
-    private void recalculateTotal() {
-        total = items.stream().mapToDouble(i -> i.getPrice() * i.getQuantity()).sum();
+    public boolean isEmpty() {
+        return items.isEmpty();
     }
 
     public boolean isEmpty() {

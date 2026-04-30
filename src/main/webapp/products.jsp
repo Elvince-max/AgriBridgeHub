@@ -7,11 +7,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Dairy Collection | EgertonAgriBridgeHub</title>
+    <!-- Tailwind + Fonts + Icons -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background: #f9f7f3; }
+        body { font-family: 'Inter', sans-serif; }
         .font-headline { font-family: 'Manrope', sans-serif; }
         .product-card:hover { transform: translateY(-4px); transition: all 0.2s ease; }
     </style>
@@ -136,14 +137,17 @@
     </div>
 </footer>
 
-<script>
-    // AJAX Add to Cart
+<!-- JavaScript: Filtering, Search, and Add-to-Cart with AJAX -->
+<!--<script>
+    // Add to Cart – updates UI dynamically, no page reload
     document.querySelectorAll('.add-to-cart').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const productId = btn.dataset.id;
             const name = btn.dataset.name;
             const price = btn.dataset.price;
             const imageUrl = btn.dataset.image || '';
+            const quantity = 1;
+
             fetch('CartServlet', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -152,25 +156,37 @@
                     productId: productId,
                     name: name,
                     price: price,
-                    quantity: 1,
+                    quantity: quantity,
                     imageUrl: imageUrl
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    document.getElementById('cartCount').innerText = data.cartSize;
-                    document.getElementById('cartTotal').innerText = 'KES ' + data.cartTotal.toFixed(2);
+                    // Update cart badge and bottom bar total
+                    const cartCountSpan = document.getElementById('cartCount');
+                    const cartTotalSpan = document.getElementById('cartTotal');
+                    if (cartCountSpan) cartCountSpan.innerText = data.cartSize;
+                    if (cartTotalSpan) cartTotalSpan.innerText = 'KES ' + data.cartTotal.toFixed(2);
+                    // Show success message (optional)
                     alert('Added to cart!');
                 } else {
-                    alert('Failed to add item.');
+                    alert('Failed to add item: ' + (data.error || 'Unknown error'));
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Add to cart error:', error);
+                alert('Could not add to cart. Please try again.\n' + error.message);
+            });
         });
     });
 
-    // Category filter
+    // Category Filter (unchanged)
     const filterBtns = document.querySelectorAll('.filter-btn');
     const productCards = document.querySelectorAll('#productGrid .product-card');
     filterBtns.forEach(btn => {
@@ -192,23 +208,84 @@
         });
     });
 
-    // Search filter
+    // Search Filter (unchanged)
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
+            const searchTerm = e.target.value.toLowerCase();
             productCards.forEach(card => {
                 const name = card.dataset.name || '';
-                if (name.includes(term)) card.style.display = '';
-                else card.style.display = 'none';
+                if (name.includes(searchTerm)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
             });
         });
     }
 
-    // Pay Now redirects to checkout
-    document.getElementById('payNowBtn').addEventListener('click', () => {
-        window.location.href = 'checkout.jsp';
+    // Pay Now button (unchanged)
+    const payNowBtn = document.getElementById('payNowBtn');
+    if (payNowBtn) {
+        payNowBtn.addEventListener('click', () => {
+            window.location.href = 'checkout.jsp';
+        });
+    }
+</script>-->
+
+<script>
+    function updateCartUI() {
+        // Optional: fetch current cart size from server to sync badge
+        fetch('CartServlet?action=getCartSize')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('cartCount').innerText = data.cartSize;
+                document.getElementById('cartTotal').innerText = 'KES ' + data.cartTotal.toFixed(2);
+            })
+            .catch(console.error);
+    }
+
+    document.querySelectorAll('.add-to-cart').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const productId = btn.dataset.id;
+            const name = btn.dataset.name;
+            const price = btn.dataset.price;
+            const imageUrl = btn.dataset.image || '';
+            const quantity = 1;
+
+            fetch('CartServlet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    action: 'add',
+                    productId: productId,
+                    name: name,
+                    price: price,
+                    quantity: quantity,
+                    imageUrl: imageUrl
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('cartCount').innerText = data.cartSize;
+                    document.getElementById('cartTotal').innerText = 'KES ' + data.cartTotal.toFixed(2);
+                    alert('Added to cart!');
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown'));
+                }
+            })
+            .catch(error => {
+                console.error('Add to cart failed:', error);
+                alert('Failed to add item. Check console for details.');
+            });
+        });
     });
+
+    // ... (keep your existing filter and search code unchanged)
 </script>
 </body>
 </html>

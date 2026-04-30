@@ -116,8 +116,7 @@ public class OrderServlet extends HttpServlet {
             session.setAttribute("lastOrderTotal", total);
 
             // 5. Redirect to Samuel's PaymentServlet
-            resp.sendRedirect("PaymentServlet?orderId=" + orderId + "&amount=" + total);
-
+            resp.sendRedirect(req.getContextPath() + "/pay?orderId=" + orderId + "&amount=" + total);
         } catch (SQLException e) {
             e.printStackTrace();
             resp.sendRedirect("checkout.jsp?error=db");

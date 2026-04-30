@@ -1,68 +1,69 @@
 package com.agribridge.controller;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import com.agribridge.dao.UserDAO;
+import com.agribridge.util.EmailUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.UUID;
 
-@WebServlet(name = "ForgotPasswordServlet", urlPatterns = {"/ForgotPasswordServlet"})
+@WebServlet("/ForgotPasswordServlet")
 public class ForgotPasswordServlet extends HttpServlet {
 
-    /**
-     * Handles the HTTP <code>POST</code> method for password reset requests.
-     */
+    private UserDAO userDAO = new UserDAO();
+
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        
-        // Set content type
-        response.setContentType("text/html;charset=UTF-8");
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String email = req.getParameter("email");
+        if (email == null || email.trim().isEmpty()) {
+            req.setAttribute("error", "Email is required.");
+            req.getRequestDispatcher("forgotPassword.jsp").forward(req, resp);
+            return;
+        }
 
-        // Get the email input from the form
-        String email = request.getParameter("email");
-
-        try (PrintWriter out = response.getWriter()) {
-            
-            // Basic validation
-            if (email == null || email.isEmpty()) {
-                out.println("<h3>Please provide a valid email address.</h3>");
+        try {
+            // Check if email exists
+            boolean exists = userDAO.isEmailExists(email);
+            if (!exists) {
+                req.setAttribute("error", "No account found with that email.");
+                req.getRequestDispatcher("forgotPassword.jsp").forward(req, resp);
                 return;
             }
 
-//            // TODO: Here you would integrate your DB check and email sending logic
-//            // For now, we just display a confirmation message
-//            out.println("<!DOCTYPE html>");
-//            out.println("<html>");
-//            out.println("<head>");
-//            out.println("<title>Forgot Password</title>");
-//            out.println("<link href=\"https://cdn.tailwindcss.com\" rel=\"stylesheet\">");
-//            out.println("</head>");
-//            out.println("<body class='flex items-center justify-center min-h-screen bg-gray-100'>");
-//            out.println("<div class='bg-white p-8 rounded shadow-md text-center'>");
-//            out.println("<h2 class='text-xl font-bold mb-4'>Password Reset Request</h2>");
-//            out.println("<p>If an account with <strong>" + email + "</strong> exists, you will receive instructions to reset your password.</p>");
-//            out.println("<a href='Login.jsp' class='mt-6 inline-block text-green-700 font-semibold hover:underline'>Return to Login</a>");
-//            out.println("</div>");
-//            out.println("</body>");
-//            out.println("</html>");
+            // Generate unique token
+            String token = UUID.randomUUID().toString();
+            // Save token with 1-hour expiry
+            boolean saved = userDAO.saveResetToken(email, token, 1);
+            if (!saved) {
+                req.setAttribute("error", "Could not process request. Try again.");
+                req.getRequestDispatcher("forgotPassword.jsp").forward(req, resp);
+                return;
+            }
+
+            // Build reset link (full URL)
+            String resetLink = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort()
+                    + req.getContextPath() + "/resetPassword.jsp?token=" + token;
+
+            // Try to send the email
+            try {
+                EmailUtil.sendResetEmail(email, resetLink);
+                req.setAttribute("message", "Password reset link has been sent to your email. Please check your inbox (and spam folder).");
+            } catch (Exception e) {
+                // Email sending failed – log the link to the server console for testing
+                System.err.println("Email sending failed: " + e.getMessage());
+                System.err.println("Reset link (copy this and open in browser): " + resetLink);
+                req.setAttribute("error", "Could not send email. Please contact support or try again later.");
+            }
+
+            req.getRequestDispatcher("forgotPassword.jsp").forward(req, resp);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("error", "Server error. Please try again later.");
+            req.getRequestDispatcher("forgotPassword.jsp").forward(req, resp);
         }
-    }
-
-    /**
-     * Handles the HTTP <code>GET</code> method by forwarding to the forgot password page.
-     */
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        //  forward to ForgotPassword.jsp
-        request.getRequestDispatcher("ForgotPassword.jsp").forward(request, response);
-    }
-
-    @Override
-    public String getServletInfo() {
-        return "Handles password reset requests by email.";
     }
 }

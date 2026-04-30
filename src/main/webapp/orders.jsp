@@ -10,7 +10,106 @@
     <!-- Bootstrap 5 + Icons + Google Fonts -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link href="css/orders.css" rel="stylesheet" type="text/css"/>
+    <style>
+        body {
+            background: #f9f7f3;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        .brand-green {
+            color: #1e4a2f;
+        }
+        .bg-brand-green {
+            background-color: #1e4a2f;
+        }
+        .btn-brown {
+            background-color: #8b5a2b;
+            border: none;
+            color: white;
+            border-radius: 40px;
+            padding: 8px 24px;
+            font-weight: 500;
+        }
+        .btn-brown:hover {
+            background-color: #6e451f;
+            color: white;
+        }
+        .status-out-for-delivery {
+            background-color: #f57c00;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .progress-step {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+        .step {
+            text-align: center;
+            flex: 1;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #aaa;
+        }
+        .step.active {
+            color: #1e4a2f;
+            font-weight: bold;
+        }
+        .step.completed {
+            color: #1e4a2f;
+        }
+        .progress-bar-custom {
+            background-color: #e9ecef;
+            border-radius: 20px;
+            height: 6px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            background-color: #1e4a2f;
+            width: 75%;
+            height: 6px;
+            border-radius: 20px;
+        }
+        .order-history-table th {
+            background-color: #1e4a2f;
+            color: white;
+        }
+        .filter-btn {
+            border-radius: 30px;
+            border: 1px solid #ced4da;
+            padding: 5px 15px;
+            background: white;
+        }
+        .filter-btn.active {
+            background-color: #1e4a2f;
+            color: white;
+            border-color: #1e4a2f;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #1e4a2f;
+            border-color: #1e4a2f;
+        }
+        .support-card {
+            background-color: #1e4a2f;
+            border-radius: 20px;
+            padding: 20px;
+            color: white;
+        }
+        .footer-link {
+            text-decoration: none;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .footer-link:hover {
+            color: #1e4a2f;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
 
@@ -198,7 +297,45 @@
         © 2024 EgertonAgriBridgeHub. Modern Pastoral Excellence.
     </div>
 </div>
+
+<script>
     // Simple client-side filtering for demo
-    <script src="js/orders.js" type="text/javascript"></script>
+    function filterOrders(status) {
+        const rows = document.querySelectorAll('#ordersTable tbody tr');
+        rows.forEach(row => {
+            if (status === 'all') {
+                row.style.display = '';
+            } else {
+                const rowStatus = row.getAttribute('data-status');
+                if (rowStatus === status) row.style.display = '';
+                else row.style.display = 'none';
+            }
+        });
+        // Update active class on filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    function exportOrders() {
+        alert('Export to CSV – coming soon');
+    }
+</script>
+
+<style>
+    .btn-outline-brand {
+        border: 1px solid #1e4a2f;
+        color: #1e4a2f;
+        border-radius: 30px;
+    }
+    .btn-outline-brand:hover {
+        background-color: #1e4a2f;
+        color: white;
+    }
+    .badge.bg-orange {
+        background-color: #f57c00;
+        color: white;
+    }
+</style>
+
 </body>
 </html>
