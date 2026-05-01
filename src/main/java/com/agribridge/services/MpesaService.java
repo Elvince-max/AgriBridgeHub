@@ -7,33 +7,22 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 
-/**
- * MpesaService.java
- * Handles all communication with Safaricom Daraja API.
- * Author: Samuel (Payment Module)
- */
 public class MpesaService {
 
-    /**
-     * Step 1: Get OAuth access token from Safaricom.
-     */
+    // Step 1: Get OAuth access token from Safaricom
     public String getOAuthToken() throws IOException {
-
-        System.out.println("[OAuth] Starting OAuth request...");
-        System.out.println("[OAuth] Consumer Key starts with: " + MpesaConfig.CONSUMER_KEY.substring(0, 6) + "...");
+        System.out.println("[OAuth] Requesting access token...");
 
         String credentials = MpesaConfig.CONSUMER_KEY + ":" + MpesaConfig.CONSUMER_SECRET;
         String encoded = Base64.getEncoder()
                                .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
-
-        System.out.println("[OAuth] Connecting to: " + MpesaConfig.OAUTH_URL);
 
         URL url = new URL(MpesaConfig.OAUTH_URL);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Authorization", "Basic " + encoded);
         conn.setRequestProperty("Content-Type", "application/json");
-        conn.setConnectTimeout(10000); // 10 seconds
+        conn.setConnectTimeout(10000);
         conn.setReadTimeout(10000);
 
         int responseCode = conn.getResponseCode();
@@ -41,30 +30,24 @@ public class MpesaService {
 
         if (responseCode == 200) {
             String response = readResponse(conn.getInputStream());
-            System.out.println("[OAuth] SUCCESS — token received.");
+            System.out.println("[OAuth] Token received successfully.");
             return extractJsonValue(response, "access_token");
         } else {
             String errorBody = readResponse(conn.getErrorStream());
-            System.out.println("[OAuth] FAILED — error: " + errorBody);
+            System.out.println("[OAuth] Failed: " + errorBody);
             return null;
         }
     }
 
-    /**
-     * Step 2: Initiate STK Push (Lipa Na M-Pesa Online).
-     */
+    // Step 2: Initiate STK Push (Lipa Na M-Pesa Online)
     public String initiateStkPush(String phone, int amount, int orderId) throws IOException {
-
-        System.out.println("[STK] Starting STK Push...");
-        System.out.println("[STK] Phone: " + phone + " | Amount: " + amount + " | OrderId: " + orderId);
+        System.out.println("[STK] Initiating STK Push — Phone: " + phone + ", Amount: " + amount + ", OrderId: " + orderId);
 
         String token = getOAuthToken();
         if (token == null) {
-            System.out.println("[STK] STOPPED — OAuth token is null.");
+            System.out.println("[STK] Stopped — could not get OAuth token.");
             return null;
         }
-
-        System.out.println("[STK] OAuth token received, building STK request...");
 
         String timestamp = LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
@@ -74,25 +57,21 @@ public class MpesaService {
                                 .encodeToString(rawPassword.getBytes(StandardCharsets.UTF_8));
 
         phone = normalizePhone(phone);
-        System.out.println("[STK] Normalized phone: " + phone);
 
         String jsonBody = "{"
-            + "\"BusinessShortCode\": \"" + MpesaConfig.SHORTCODE          + "\","
-            + "\"Password\": \""           + password                       + "\","
-            + "\"Timestamp\": \""          + timestamp                      + "\","
-            + "\"TransactionType\": \""    + MpesaConfig.TRANSACTION_TYPE   + "\","
-            + "\"Amount\": "               + amount                         + ","
-            + "\"PartyA\": \""             + phone                          + "\","
-            + "\"PartyB\": \""             + MpesaConfig.SHORTCODE          + "\","
-            + "\"PhoneNumber\": \""        + phone                          + "\","
-            + "\"CallBackURL\": \""        + MpesaConfig.CALLBACK_URL       + "\","
+            + "\"BusinessShortCode\": \"" + MpesaConfig.SHORTCODE         + "\","
+            + "\"Password\": \""           + password                      + "\","
+            + "\"Timestamp\": \""          + timestamp                     + "\","
+            + "\"TransactionType\": \""    + MpesaConfig.TRANSACTION_TYPE  + "\","
+            + "\"Amount\": "               + amount                        + ","
+            + "\"PartyA\": \""             + phone                         + "\","
+            + "\"PartyB\": \""             + MpesaConfig.SHORTCODE         + "\","
+            + "\"PhoneNumber\": \""        + phone                         + "\","
+            + "\"CallBackURL\": \""        + MpesaConfig.CALLBACK_URL      + "\","
             + "\"AccountReference\": \""   + MpesaConfig.ACCOUNT_REFERENCE
-                                           + "-" + orderId                  + "\","
-            + "\"TransactionDesc\": \""    + MpesaConfig.TRANSACTION_DESC   + "\""
+                                           + "-" + orderId                 + "\","
+            + "\"TransactionDesc\": \""    + MpesaConfig.TRANSACTION_DESC  + "\""
             + "}";
-
-        System.out.println("[STK] Sending request to Safaricom...");
-        System.out.println("[STK] Callback URL: " + MpesaConfig.CALLBACK_URL);
 
         URL url = new URL(MpesaConfig.STK_PUSH_URL);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -108,24 +87,21 @@ public class MpesaService {
         }
 
         int responseCode = conn.getResponseCode();
-        String response  = responseCode == 200
+        String response = responseCode == 200
                 ? readResponse(conn.getInputStream())
                 : readResponse(conn.getErrorStream());
 
         System.out.println("[STK] Response code: " + responseCode);
-        System.out.println("[STK] Response body: " + response);
 
         if (responseCode == 200) {
             String checkoutId = extractJsonValue(response, "CheckoutRequestID");
-            System.out.println("[STK] SUCCESS — CheckoutRequestID: " + checkoutId);
+            System.out.println("[STK] STK Push sent. CheckoutRequestID: " + checkoutId);
             return checkoutId;
         } else {
-            System.out.println("[STK] FAILED — see response body above.");
+            System.out.println("[STK] Failed: " + response);
             return null;
         }
     }
-
-    // ── Helpers ──────────────────────────────────────
 
     private String readResponse(InputStream stream) throws IOException {
         if (stream == null) return "";
@@ -137,21 +113,21 @@ public class MpesaService {
         return sb.toString();
     }
 
+    // Parses a string or numeric value from a JSON string
     private String extractJsonValue(String json, String key) {
-    // Handle both "key":"value" and "key": "value" (with space)
-    String search = "\"" + key + "\":\"";
-    int start = json.indexOf(search);
-    if (start == -1) {
-        // Try with space after colon
-        search = "\"" + key + "\": \"";
-        start = json.indexOf(search);
+        String search = "\"" + key + "\":\"";
+        int start = json.indexOf(search);
+        if (start == -1) {
+            search = "\"" + key + "\": \"";
+            start = json.indexOf(search);
+        }
+        if (start == -1) return null;
+        start += search.length();
+        int end = json.indexOf("\"", start);
+        return end == -1 ? null : json.substring(start, end);
     }
-    if (start == -1) return null;
-    start += search.length();
-    int end = json.indexOf("\"", start);
-    return end == -1 ? null : json.substring(start, end);
-}
 
+    // Converts phone to international format: 0712... → 254712...
     public String normalizePhone(String phone) {
         if (phone == null) return "";
         phone = phone.trim().replaceAll("\\s+", "");

@@ -1,24 +1,12 @@
 package com.agribridge.dao;
 
 import com.agribridge.model.Payment;
+import com.agribridge.util.DBConnection;
 
 import java.sql.*;
 
-/**
- * PaymentDAO.java
- * ─────────────────────────────────────────────────────
- * Handles all database operations for the `payments` table.
- * Also updates the `orders` table status when payment completes.
- *
- 
- * If DBConnection isn't ready yet, use the inline getConnection()
- * method provided at the bottom of this file.
- * ─────────────────────────────────────────────────────
- * Author : Samuel (Payment Module)
- */
 public class PaymentDAO {
 
-    // ── 1. Insert a new payment record (status = Pending) ──
     public int insertPayment(Payment payment) throws SQLException {
         String sql = "INSERT INTO payments (order_id, amount, payment_method, "
                    + "transaction_code, payment_status, payment_date) "
@@ -35,13 +23,12 @@ public class PaymentDAO {
             ps.executeUpdate();
 
             ResultSet rs = ps.getGeneratedKeys();
-            if (rs.next()) return rs.getInt(1);  // return new payment_id
+            if (rs.next()) return rs.getInt(1);
         }
         return -1;
     }
 
-    // ── 2. Update payment status by CheckoutRequestID ──────
-    //    Called from MpesaCallbackServlet when Safaricom sends the result
+    // Updates payment status once Safaricom confirms via callback
     public boolean updatePaymentStatus(String checkoutRequestId,
                                        String newStatus,
                                        String mpesaReceiptNumber) throws SQLException {
@@ -52,7 +39,6 @@ public class PaymentDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, newStatus);
-            // Replace CheckoutRequestID with the real M-Pesa receipt number
             ps.setString(2, mpesaReceiptNumber != null ? mpesaReceiptNumber : checkoutRequestId);
             ps.setString(3, checkoutRequestId);
 
@@ -60,21 +46,18 @@ public class PaymentDAO {
         }
     }
 
-    // ── 3. Update order status when payment completes ──────
-    //    Keeps orders table in sync with payment outcome
     public boolean updateOrderStatus(int orderId, String status) throws SQLException {
         String sql = "UPDATE orders SET status = ? WHERE order_id = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, status);  // e.g. "confirmed" or "failed"
+            ps.setString(1, status);
             ps.setInt   (2, orderId);
             return ps.executeUpdate() > 0;
         }
     }
 
-    // ── 4. Fetch a payment by order_id ────────────────────
     public Payment getPaymentByOrderId(int orderId) throws SQLException {
         String sql = "SELECT * FROM payments WHERE order_id = ? ORDER BY payment_date DESC LIMIT 1";
 
@@ -99,7 +82,6 @@ public class PaymentDAO {
         return null;
     }
 
-    // ── 5. Fetch order amount from orders table ───────────
     public double getOrderAmount(int orderId) throws SQLException {
         String sql = "SELECT total_amount FROM orders WHERE order_id = ?";
 
@@ -113,20 +95,11 @@ public class PaymentDAO {
         return 0.0;
     }
 
-    // ── Database connection ───────────────────────────────
- 
-    //    shared utility class is available in the project.
     private Connection getConnection() throws SQLException {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("MySQL driver not found", e);
+        Connection conn = DBConnection.getConnection();
+        if (conn == null) {
+            throw new SQLException("Could not get a database connection.");
         }
-        // Update these credentials to match your local MySQL setup
-        return DriverManager.getConnection(
-            "jdbc:mysql://localhost:3306/dairy_sales_db",
-            "root",      //MySQL username
-            "admin"       //MySQL password
-        );
+        return conn;
     }
 }

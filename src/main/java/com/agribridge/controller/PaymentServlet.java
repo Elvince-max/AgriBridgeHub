@@ -1,31 +1,25 @@
 package com.agribridge.controller;
 
-import com.agribridge.dao.PaymentDAO;            
-import com.agribridge.model.Payment;             
-import com.agribridge.services.MpesaConfig;      
-import com.agribridge.services.MpesaService;     
+import com.agribridge.dao.PaymentDAO;
+import com.agribridge.model.Payment;
+import com.agribridge.services.MpesaConfig;
+import com.agribridge.services.MpesaService;
 
-import jakarta.servlet.ServletException;          
-import jakarta.servlet.annotation.WebServlet;     
-import jakarta.servlet.http.HttpServlet;          
-import jakarta.servlet.http.HttpServletRequest;   
-import jakarta.servlet.http.HttpServletResponse;  
-import jakarta.servlet.http.HttpSession;          
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
-/**
- * PaymentServlet.java
- * Mapped to: /pay
- * GET  /pay?orderId=X  → populates Payment bean → forwards to Payment.jsp
- * POST /pay            → validates form → initiates M-Pesa STK Push
- * Author: Samuel (Payment Module)
- */
+// Handles the payment page and M-Pesa STK Push initiation
 @WebServlet("/pay")
 public class PaymentServlet extends HttpServlet {
 
     private MpesaService mpesaService;
-    private PaymentDAO   paymentDAO;
+    private PaymentDAO paymentDAO;
 
     @Override
     public void init() throws ServletException {
@@ -33,17 +27,10 @@ public class PaymentServlet extends HttpServlet {
         paymentDAO   = new PaymentDAO();
     }
 
-    // ── GET: Load the payment page ────────────────────
+    // GET /pay?orderId=X — loads the payment page with order details
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
-       
-        // HttpSession session = req.getSession(false);
-        // if (session == null || session.getAttribute("user") == null) {
-        //     resp.sendRedirect(req.getContextPath() + "/login.jsp");
-        //     return;
-        // }
 
         String orderIdParam = req.getParameter("orderId");
         if (orderIdParam == null || orderIdParam.isBlank()) {
@@ -52,35 +39,35 @@ public class PaymentServlet extends HttpServlet {
         }
 
         try {
-            int    orderId = Integer.parseInt(orderIdParam);
-            double amount  = 1.00; // test value — replace with paymentDAO.getOrderAmount(orderId) when DB is ready
+            int orderId = Integer.parseInt(orderIdParam);
+            double amount = paymentDAO.getOrderAmount(orderId);
+            if (amount <= 0) amount = 1.00;
 
-            // ── Create Payment Java Bean and set its properties ──
             Payment payment = new Payment();
             payment.setOrderId(orderId);
             payment.setAmount(amount);
             payment.setPaymentMethod("M-Pesa");
             payment.setPaymentStatus("Pending");
 
-            // ── Calculate subtotal and store for EL ──────────────
-            double deliveryFee = 1.00;
+            double deliveryFee = 150.00;
             double subtotal    = amount - deliveryFee;
             if (subtotal < 0) subtotal = amount;
 
-            // ── Put bean and values in request scope ─────────────
-            // JSP reads these via EL: ${payment.orderId}, ${subtotal} etc.
             req.setAttribute("payment",     payment);
             req.setAttribute("deliveryFee", deliveryFee);
             req.setAttribute("subtotal",    subtotal);
 
-            req.getRequestDispatcher("/Payment.jsp").forward(req, resp);
+            req.getRequestDispatcher("/payment.jsp").forward(req, resp);
 
         } catch (NumberFormatException e) {
+            resp.sendRedirect(req.getContextPath() + "/products.jsp");
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
             resp.sendRedirect(req.getContextPath() + "/products.jsp");
         }
     }
 
-    // ── POST: Process payment ─────────────────────────
+    // POST /pay — validates the form and initiates M-Pesa STK Push
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -91,11 +78,10 @@ public class PaymentServlet extends HttpServlet {
         String phoneParam   = req.getParameter("phone");
         String amountParam  = req.getParameter("amount");
 
-        // ── Validation ────────────────────────────────
         if (orderIdParam == null || phoneParam == null || amountParam == null
                 || orderIdParam.isBlank() || phoneParam.isBlank() || amountParam.isBlank()) {
             req.setAttribute("errorMessage", "All fields are required.");
-            req.getRequestDispatcher("/Payment.jsp").forward(req, resp);
+            req.getRequestDispatcher("/payment.jsp").forward(req, resp);
             return;
         }
 
@@ -107,24 +93,22 @@ public class PaymentServlet extends HttpServlet {
             Payment payment = new Payment();
             payment.setOrderId(orderId);
             payment.setAmount(amount);
-            double deliveryFee = 1.00;
+            double deliveryFee = 150.00;
             req.setAttribute("payment",      payment);
             req.setAttribute("deliveryFee",  deliveryFee);
             req.setAttribute("subtotal",     amount - deliveryFee);
             req.setAttribute("errorMessage", "Invalid phone number. Enter a valid Safaricom number e.g. 0712345678.");
-            req.getRequestDispatcher("/Payment.jsp").forward(req, resp);
+            req.getRequestDispatcher("/payment.jsp").forward(req, resp);
             return;
         }
 
         try {
             String checkoutRequestId;
 
-            // ── SIMULATION MODE ───────────────────────
             if (MpesaConfig.SIMULATE) {
                 checkoutRequestId = "SIM-" + System.currentTimeMillis();
 
-                Payment payment = new Payment(
-                    orderId, amount, "M-Pesa (Simulated)", checkoutRequestId, "Completed");
+                Payment payment = new Payment(orderId, amount, "M-Pesa (Simulated)", checkoutRequestId, "Completed");
                 paymentDAO.insertPayment(payment);
                 paymentDAO.updateOrderStatus(orderId, "confirmed");
 
@@ -136,7 +120,6 @@ public class PaymentServlet extends HttpServlet {
                 return;
             }
 
-            // ── M-PESA STK PUSH ──────────────────
             checkoutRequestId = mpesaService.initiateStkPush(phone, (int) Math.ceil(amount), orderId);
 
             if (checkoutRequestId == null) {
@@ -147,25 +130,25 @@ public class PaymentServlet extends HttpServlet {
                 req.setAttribute("payment",      payment);
                 req.setAttribute("deliveryFee",  deliveryFee);
                 req.setAttribute("subtotal",     amount - deliveryFee);
-                req.setAttribute("errorMessage", "M-Pesa request failed. Check credentials or network and try again.");
-                req.getRequestDispatcher("/Payment.jsp").forward(req, resp);
+                req.setAttribute("errorMessage", "M-Pesa request failed. Check your credentials or network and try again.");
+                req.getRequestDispatcher("/payment.jsp").forward(req, resp);
                 return;
             }
 
             Payment payment = new Payment(orderId, amount, "M-Pesa", checkoutRequestId, "Pending");
             paymentDAO.insertPayment(payment);
 
-            session.setAttribute("paymentStatus",   "Pending");
-            session.setAttribute("transactionCode",  checkoutRequestId);
-            session.setAttribute("paymentOrderId",   orderId);
-            session.setAttribute("paymentPhone",     phone);
+            session.setAttribute("paymentStatus",  "Pending");
+            session.setAttribute("transactionCode", checkoutRequestId);
+            session.setAttribute("paymentOrderId",  orderId);
+            session.setAttribute("paymentPhone",    phone);
 
             resp.sendRedirect(req.getContextPath() + "/Paymentstatus.jsp");
 
         } catch (Exception e) {
             e.printStackTrace();
             req.setAttribute("errorMessage", "Unexpected error: " + e.getMessage());
-            req.getRequestDispatcher("/Payment.jsp").forward(req, resp);
+            req.getRequestDispatcher("/payment.jsp").forward(req, resp);
         }
     }
 }
