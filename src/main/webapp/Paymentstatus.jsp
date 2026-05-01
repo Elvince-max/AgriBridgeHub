@@ -53,16 +53,18 @@
 
     <style>
         :root {
-            --red:    #B71C1C;
-            --red-dk: #8B0000;
-            --gold:   #C9A84C;
-            --gold-lt:#F5EDD0;
-            --green:  #1B5E20;
-            --cream:  #FDF8F0;
-            --card:   #FFFFFF;
-            --border: #E8DDD0;
-            --text:   #1a1a1a;
-            --muted:  #6b6b6b;
+            --green:   #1B5E20;
+            --green-dk:#145218;
+            --green-lt:#E8F5E9;
+            --gold:    #C9A84C;
+            --gold-lt: #F5EDD0;
+            --red:     #B71C1C;
+            --red-lt:  #FDECEC;
+            --cream:   #FDF8F0;
+            --card:    #FFFFFF;
+            --border:  #E8DDD0;
+            --text:    #1a1a1a;
+            --muted:   #6b6b6b;
         }
 
         * { box-sizing: border-box; }
@@ -76,7 +78,7 @@
 
         /* ── Navbar ── */
         .top-nav {
-            background: var(--red);
+            background: var(--green);
             padding: 0 32px;
             display: flex;
             justify-content: space-between;
@@ -101,11 +103,11 @@
             padding: 5px 14px;
             border-radius: 20px;
         }
-        .status-confirmed { background: var(--gold-lt); color: var(--red-dk); }
+        .status-confirmed { background: var(--gold-lt); color: var(--green-dk); }
         .status-pending   { background: rgba(255,255,255,0.15); color: var(--gold); }
         .status-failed    { background: rgba(0,0,0,0.2); color: #ffaaaa; }
 
-        .accent-bar { height: 4px; background: linear-gradient(90deg, var(--gold) 0%, var(--red) 60%, var(--green) 100%); }
+        .accent-bar { height: 4px; background: linear-gradient(90deg, var(--green) 0%, var(--gold) 50%, var(--red) 100%); }
 
         /* ── Page container ── */
         .page-container { max-width: 820px; margin: 36px auto; padding: 0 24px 60px; }
@@ -117,23 +119,23 @@
             font-size: 1.8rem; margin: 0 auto 18px;
         }
         .icon-success { background: var(--green); color: #fff; }
-        .icon-pending { background: var(--gold); color: var(--red-dk); }
+        .icon-pending { background: var(--gold); color: var(--green-dk); }
         .icon-failed  { background: var(--red); color: #fff; }
 
         .status-heading { text-align: center; margin-bottom: 4px; }
-        .status-heading h2 { font-size: 1.6rem; font-weight: 700; color: var(--red); }
+        .status-heading h2 { font-size: 1.6rem; font-weight: 700; color: var(--green); }
         .status-heading p  { color: var(--muted); font-size: 0.84rem; }
 
         /* ── Card ── */
         .card-box { background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-top: 24px; }
         .card-header-bar {
-            background: var(--red); padding: 12px 24px;
+            background: var(--green); padding: 12px 24px;
             display: flex; align-items: center; gap: 8px;
         }
         .card-header-bar .card-title { color: #fff; font-size: 0.88rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         .card-body-pad { padding: 24px; }
 
-        .card-section-title { font-size: 0.78rem; font-weight: 700; color: var(--red); letter-spacing: 0.3px; margin-bottom: 16px; }
+        .card-section-title { font-size: 0.78rem; font-weight: 700; color: var(--green); letter-spacing: 0.3px; margin-bottom: 16px; }
 
         /* ── Info rows ── */
         .info-label { font-size: 0.63rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; margin-bottom: 3px; }
@@ -145,28 +147,28 @@
         .item-icon { width: 42px; height: 42px; border-radius: 7px; background: var(--gold-lt); border: 1px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
         .item-name { font-size: 0.84rem; font-weight: 600; flex: 1; }
         .item-sub  { font-size: 0.73rem; color: var(--muted); }
-        .item-price { font-size: 0.84rem; font-weight: 700; color: var(--red); white-space: nowrap; }
+        .item-price { font-size: 0.84rem; font-weight: 700; color: var(--green); white-space: nowrap; }
         .divider   { border-top: 1px solid var(--border); margin: 12px 0; }
         .totals-row   { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); margin-bottom: 5px; }
-        .totals-final { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 700; color: var(--red); margin-top: 8px; }
+        .totals-final { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 700; color: var(--green); margin-top: 8px; }
 
         /* ── Buttons ── */
         .btn-primary-eu {
-            background: var(--red); color: white; border: none; border-radius: 8px;
+            background: var(--green); color: white; border: none; border-radius: 8px;
             padding: 12px 20px; font-size: 0.88rem; font-weight: 600;
             font-family: 'Inter', sans-serif; display: inline-flex; align-items: center;
             justify-content: center; gap: 7px; text-decoration: none;
             transition: background 0.2s; width: 100%; margin-bottom: 10px;
         }
-        .btn-primary-eu:hover { background: var(--red-dk); color: white; }
+        .btn-primary-eu:hover { background: var(--green-dk); color: white; }
         .btn-secondary-eu {
-            background: var(--gold-lt); color: var(--red-dk); border: 1px solid var(--gold);
+            background: var(--gold-lt); color: var(--green-dk); border: 1px solid var(--gold);
             border-radius: 8px; padding: 11px 20px; font-size: 0.85rem;
             font-family: 'Inter', sans-serif; display: inline-flex; align-items: center;
             justify-content: center; gap: 7px; text-decoration: none;
             transition: background 0.2s; width: 100%;
         }
-        .btn-secondary-eu:hover { background: var(--gold); color: var(--red-dk); }
+        .btn-secondary-eu:hover { background: var(--gold); color: var(--green-dk); }
 
         /* ── Full status card (pending / failed) ── */
         .full-status-card {
@@ -177,7 +179,7 @@
         /* ── Pending spinner ── */
         .pending-spinner {
             width: 48px; height: 48px;
-            border: 4px solid var(--gold);
+            border: 4px solid var(--green);
             border-top-color: transparent;
             border-radius: 50%;
             animation: spin 0.9s linear infinite;
@@ -186,12 +188,12 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .support-line { text-align: center; margin-top: 24px; font-size: 0.82rem; color: var(--muted); }
-        .support-line a { color: var(--red); text-decoration: none; font-weight: 600; }
-        .support-line a:hover { color: var(--red-dk); }
+        .support-line a { color: var(--green); text-decoration: none; font-weight: 600; }
+        .support-line a:hover { color: var(--green-dk); }
 
         /* ── Footer ── */
         footer {
-            background: var(--red); color: rgba(255,255,255,0.6);
+            background: var(--green); color: rgba(255,255,255,0.6);
             padding: 16px 32px; display: flex;
             justify-content: space-between; align-items: center; font-size: 0.73rem;
         }
@@ -204,6 +206,9 @@
             .top-nav { padding: 0 16px; }
         }
     </style>
+
+
+
 </head>
 <body>
 

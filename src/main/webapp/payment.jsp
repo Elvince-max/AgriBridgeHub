@@ -15,16 +15,18 @@
 
     <style>
         :root {
-            --red:    #B71C1C;
-            --red-dk: #8B0000;
-            --gold:   #C9A84C;
-            --gold-lt:#F5EDD0;
-            --green:  #1B5E20;
-            --cream:  #FDF8F0;
-            --card:   #FFFFFF;
-            --border: #E8DDD0;
-            --text:   #1a1a1a;
-            --muted:  #6b6b6b;
+            --green:   #1B5E20;
+            --green-dk:#145218;
+            --green-lt:#E8F5E9;
+            --gold:    #C9A84C;
+            --gold-lt: #F5EDD0;
+            --red:     #B71C1C;
+            --red-lt:  #FDECEC;
+            --cream:   #FDF8F0;
+            --card:    #FFFFFF;
+            --border:  #E8DDD0;
+            --text:    #1a1a1a;
+            --muted:   #6b6b6b;
         }
 
         * { box-sizing: border-box; }
@@ -38,7 +40,7 @@
 
         /* ── Navbar ── */
         .top-nav {
-            background: var(--red);
+            background: var(--green);
             padding: 0 32px;
             display: flex;
             justify-content: space-between;
@@ -91,7 +93,7 @@
         /* ── Gold accent bar ── */
         .accent-bar {
             height: 4px;
-            background: linear-gradient(90deg, var(--gold) 0%, var(--red) 60%, var(--green) 100%);
+            background: linear-gradient(90deg, var(--green) 0%, var(--gold) 50%, var(--red) 100%);
         }
 
         /* ── Page heading ── */
@@ -109,11 +111,11 @@
             align-items: center;
             gap: 6px;
         }
-        .breadcrumb-trail span { color: var(--red); font-weight: 600; }
+        .breadcrumb-trail span { color: var(--green); font-weight: 600; }
         .page-heading h1 {
             font-size: 1.6rem;
             font-weight: 700;
-            color: var(--red);
+            color: var(--green);
             margin: 0 0 2px;
         }
         .page-heading p {
@@ -140,7 +142,7 @@
             overflow: hidden;
         }
         .card-header-bar {
-            background: var(--red);
+            background: var(--green);
             padding: 12px 24px;
             display: flex;
             align-items: center;
@@ -156,7 +158,7 @@
         }
         .mpesa-badge {
             background: var(--gold);
-            color: var(--red-dk);
+            color: var(--green-dk);
             font-size: 0.68rem;
             font-weight: 700;
             padding: 3px 10px;
@@ -185,12 +187,12 @@
             outline: none;
             transition: border-color 0.2s;
         }
-        .phone-field:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(183,28,28,0.08); }
+        .phone-field:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(27,94,32,0.1); }
         .phone-hint { font-size: 0.77rem; color: var(--muted); margin-top: 7px; line-height: 1.5; }
 
         .btn-pay {
             width: 100%;
-            background: var(--red);
+            background: var(--green);
             color: white;
             border: none;
             border-radius: 8px;
@@ -206,7 +208,7 @@
             gap: 8px;
             transition: background 0.2s, transform 0.1s;
         }
-        .btn-pay:hover { background: var(--red-dk); transform: translateY(-1px); }
+        .btn-pay:hover { background: var(--green-dk); transform: translateY(-1px); }
         .btn-pay:active { transform: translateY(0); }
 
         /* ── Trust badges ── */
@@ -231,7 +233,7 @@
         .summary-title {
             font-size: 0.88rem;
             font-weight: 700;
-            color: var(--red);
+            color: var(--green);
         }
         .order-item-row {
             display: flex;
@@ -254,7 +256,7 @@
         .item-details { flex: 1; }
         .item-name { font-size: 0.84rem; font-weight: 600; }
         .item-sub { font-size: 0.73rem; color: var(--muted); }
-        .item-price { font-size: 0.88rem; font-weight: 700; color: var(--red); white-space: nowrap; }
+        .item-price { font-size: 0.88rem; font-weight: 700; color: var(--green); white-space: nowrap; }
         .divider { border-top: 1px solid var(--border); margin: 12px 0; }
         .totals-row {
             display: flex;
@@ -268,23 +270,23 @@
             justify-content: space-between;
             font-size: 0.95rem;
             font-weight: 700;
-            color: var(--red);
+            color: var(--green);
             margin-top: 8px;
         }
 
         /* ── Info box ── */
         .info-box {
-            background: var(--gold-lt);
-            border: 1px solid var(--gold);
+            background: var(--green-lt);
+            border: 1px solid #A5D6A7;
             border-radius: 8px;
             padding: 12px 14px;
             margin-top: 16px;
             display: flex;
             gap: 10px;
         }
-        .info-box i { color: var(--gold); flex-shrink: 0; margin-top: 2px; }
-        .info-box-text { font-size: 0.75rem; color: #5a4a1a; line-height: 1.5; }
-        .info-box-text b { color: var(--red-dk); display: block; margin-bottom: 2px; }
+        .info-box i { color: var(--green); flex-shrink: 0; margin-top: 2px; }
+        .info-box-text { font-size: 0.75rem; color: #2E7D32; line-height: 1.5; }
+        .info-box-text b { color: var(--green-dk); display: block; margin-bottom: 2px; }
 
         /* ── Back link ── */
         .back-link {
@@ -297,17 +299,17 @@
             margin-top: 14px;
             transition: color 0.2s;
         }
-        .back-link:hover { color: var(--red); }
+        .back-link:hover { color: var(--green); }
 
-        /* ── Alert ── */
+        /* ── Alert (errors keep red) ── */
         .error-alert {
-            background: #FDECEC;
+            background: var(--red-lt);
             border: 1px solid #f5c6c6;
             border-left: 4px solid var(--red);
             border-radius: 8px;
             padding: 12px 16px;
             font-size: 0.84rem;
-            color: var(--red-dk);
+            color: var(--red);
             margin-bottom: 16px;
             display: flex;
             align-items: center;
@@ -316,7 +318,7 @@
 
         /* ── Footer ── */
         footer {
-            background: var(--red);
+            background: var(--green);
             color: rgba(255,255,255,0.6);
             padding: 16px 32px;
             display: flex;
@@ -334,6 +336,8 @@
             .top-nav { padding: 0 16px; }
         }
     </style>
+
+
 </head>
 <body>
 
