@@ -1,0 +1,8 @@
+# M-Pesa Daraja API credentials
+# Copy this file to mpesa.properties and fill in your actual values
+# DO NOT commit mpesa.properties - it contains real credentials
+
+MPESA_CONSUMER_KEY=your-consumer-key-here
+MPESA_CONSUMER_SECRET=your-consumer-secret-here
+MPESA_PASSKEY=your-passkey-here
+MPESA_CALLBACK_URL=https://your-ngrok-url.ngrok-free.app/AgriBridgeHub/mpesa/callback
