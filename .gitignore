@@ -1,0 +1,21 @@
+# ── Maven build output ─────────────────────────────────
+target/
+
+# ── IDE / Editor ───────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+nbproject/private/
+nb-configuration.xml
+*.class
+
+# ── Logs ───────────────────────────────────────────────
+*.log
+
+# ── OS ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Credentials / Secrets (never commit these) ─────────
+mpesa.properties
+secrets.properties

@@ -1,67 +1,48 @@
 package com.agribridge.controller;
 
-import com.agribridge.dao.PaymentDAO;           
+import com.agribridge.dao.PaymentDAO;
 
-import jakarta.servlet.ServletException;          
-import jakarta.servlet.annotation.WebServlet;     
-import jakarta.servlet.http.HttpServlet;          
-import jakarta.servlet.http.HttpServletRequest;   
-import jakarta.servlet.http.HttpServletResponse;  
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/**
- * MpesaCallbackServlet.java
- * ─────────────────────────────────────────────────────
- * Mapped to: /mpesa/callback
- *
- * Safaricom calls this URL after customer approves/declines STK Push.
- *
- * The result is stored in a static ConcurrentHashMap (paymentResults).
- * Paymentstatus.jsp reads from this map on each auto-refresh to check
- * if the payment has completed — this is necessary because Safaricom's
- * callback arrives on a different thread with no access to browser sessions.
- *
- * Map key   → CheckoutRequestID (e.g. "ws_CO_09042026...")
- * Map value → "Completed:QBK34VY..." or "Failed"
- * ─────────────────────────────────────────────────────
- * Author: Samuel (Payment Module)
- */
+// Handles the Safaricom M-Pesa callback after an STK Push is initiated
 @WebServlet("/mpesa/callback")
 public class MpesaCallbackServlet extends HttpServlet {
 
-    /**
-     * Static map shared across all servlet instances.
-     * Paymentstatus.jsp reads: MpesaCallbackServlet.paymentResults.get(checkoutId)
-     */
-    public static final ConcurrentHashMap<String, String> paymentResults
-            = new ConcurrentHashMap<>();
+    // Stores payment results keyed by CheckoutRequestID
+    // Value format: "Completed:RECEIPT_NUMBER" or "Failed"
+    public static final ConcurrentHashMap<String, String> paymentResults = new ConcurrentHashMap<>();
 
     private final PaymentDAO paymentDAO = new PaymentDAO();
+
+    // Use this to read and remove a result in one step, avoiding memory buildup
+    public static String getAndRemoveResult(String checkoutRequestId) {
+        return paymentResults.remove(checkoutRequestId);
+    }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        // Read raw JSON body sent by Safaricom
-        String body = req.getReader().lines()
-                        .collect(Collectors.joining("\n"));
+        String body = req.getReader().lines().collect(Collectors.joining("\n"));
+        System.out.println("[MpesaCallback] Callback received. Length: " + body.length());
 
-        System.out.println("[MpesaCallback] Received:\n" + body);
-
-        // Always respond 200 immediately — Safaricom will retry if we don't
+        // Respond 200 immediately — Safaricom retries if we don't respond quickly
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("application/json");
         resp.getWriter().write("{\"ResultCode\":0,\"ResultDesc\":\"Accepted\"}");
 
-        // Process result after responding
         try {
             processCallback(body);
         } catch (Exception e) {
             e.printStackTrace();
-            // Never throw — we already responded 200 to Safaricom
         }
     }
 
@@ -75,48 +56,37 @@ public class MpesaCallbackServlet extends HttpServlet {
         System.out.println("[MpesaCallback] CheckoutRequestID: " + checkoutRequestId);
 
         if (checkoutRequestId == null) {
-            System.out.println("[MpesaCallback] ERROR — No CheckoutRequestID found.");
+            System.out.println("[MpesaCallback] No CheckoutRequestID in callback.");
             return;
         }
 
         if (resultCode == 0) {
-            // ── SUCCESS ──────────────────────────────────────
             String mpesaReceipt = extractJsonValue(json, "MpesaReceiptNumber");
-            System.out.println("[MpesaCallback] SUCCESS — Receipt: " + mpesaReceipt);
+            System.out.println("[MpesaCallback] Payment successful. Receipt: " + mpesaReceipt);
 
-            // Store in map so Paymentstatus.jsp can read it on next refresh
             paymentResults.put(checkoutRequestId,
                     "Completed:" + (mpesaReceipt != null ? mpesaReceipt : ""));
 
-            // Update DB — Pending → Completed (best effort, DB may not be set up yet)
             try {
                 paymentDAO.updatePaymentStatus(checkoutRequestId, "Completed", mpesaReceipt);
             } catch (Exception e) {
-                System.out.println("[MpesaCallback] DB update skipped (DB not ready): " + e.getMessage());
+                System.out.println("[MpesaCallback] DB update failed: " + e.getMessage());
             }
 
         } else {
-            // ── FAILURE / CANCELLED ───────────────────────────
-            // 1032 = cancelled by user, 1037 = timeout
-            System.out.println("[MpesaCallback] FAILED — ResultCode: " + resultCode);
-
+            System.out.println("[MpesaCallback] Payment failed or cancelled. Code: " + resultCode);
             paymentResults.put(checkoutRequestId, "Failed");
 
             try {
                 paymentDAO.updatePaymentStatus(checkoutRequestId, "Failed", null);
             } catch (Exception e) {
-                System.out.println("[MpesaCallback] DB update skipped: " + e.getMessage());
+                System.out.println("[MpesaCallback] DB update failed: " + e.getMessage());
             }
         }
     }
 
-    /**
-     * Extracts a value from JSON for both:
-     *   "Key":"Value"   (string)
-     *   "Key":123       (number)
-     */
+    // Extracts a value from a JSON string (handles both string and numeric values)
     private String extractJsonValue(String json, String key) {
-        // String value
         String searchStr = "\"" + key + "\":\"";
         int start = json.indexOf(searchStr);
         if (start != -1) {
@@ -124,7 +94,6 @@ public class MpesaCallbackServlet extends HttpServlet {
             int end = json.indexOf("\"", start);
             return end == -1 ? null : json.substring(start, end);
         }
-        // Numeric value
         String searchNum = "\"" + key + "\":";
         start = json.indexOf(searchNum);
         if (start != -1) {
