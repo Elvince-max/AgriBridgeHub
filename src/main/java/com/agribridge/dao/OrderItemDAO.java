@@ -29,7 +29,7 @@ public class OrderItemDAO {
     public List<OrderItem> getOrderItemsByOrderId(int orderId) throws SQLException {
         List<OrderItem> items = new ArrayList<>();
         String sql = "SELECT oi.*, p.name as product_name FROM order_items oi " +
-                     "JOIN products p ON oi.product_id = p.product_id WHERE oi.order_id = ?";
+                     "JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, orderId);

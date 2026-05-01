@@ -24,7 +24,7 @@ public class PaymentServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         mpesaService = new MpesaService();
-        paymentDAO   = new PaymentDAO();
+        paymentDAO = new PaymentDAO();
     }
 
     // GET /pay?orderId=X — loads the payment page with order details
@@ -43,15 +43,25 @@ public class PaymentServlet extends HttpServlet {
             double amount = paymentDAO.getOrderAmount(orderId);
             if (amount <= 0) amount = 1.00;
 
+            // Use session amounts set by QuickOrderServlet when available
+            HttpSession session = req.getSession(false);
+            double deliveryFee = 10.00;
+            double subtotal    = amount - deliveryFee;
+
+            if (session != null) {
+                Object sDelivery  = session.getAttribute("paymentDelivery");
+                Object sSubtotal  = session.getAttribute("paymentSubtotal");
+                if (sDelivery != null)  deliveryFee = ((Number) sDelivery).doubleValue();
+                if (sSubtotal != null)  subtotal    = ((Number) sSubtotal).doubleValue();
+            }
+
+            if (subtotal < 0) subtotal = amount;
+
             Payment payment = new Payment();
             payment.setOrderId(orderId);
             payment.setAmount(amount);
             payment.setPaymentMethod("M-Pesa");
             payment.setPaymentStatus("Pending");
-
-            double deliveryFee = 150.00;
-            double subtotal    = amount - deliveryFee;
-            if (subtotal < 0) subtotal = amount;
 
             req.setAttribute("payment",     payment);
             req.setAttribute("deliveryFee", deliveryFee);
@@ -75,28 +85,44 @@ public class PaymentServlet extends HttpServlet {
         HttpSession session = req.getSession(true);
 
         String orderIdParam = req.getParameter("orderId");
-        String phoneParam   = req.getParameter("phone");
-        String amountParam  = req.getParameter("amount");
+        String phoneParam = req.getParameter("phone");
+        String amountParam = req.getParameter("amount");
 
         if (orderIdParam == null || phoneParam == null || amountParam == null
                 || orderIdParam.isBlank() || phoneParam.isBlank() || amountParam.isBlank()) {
+
+            // Repopulate payment object so hidden fields work on re-render
+            try {
+                int oid = (orderIdParam != null && !orderIdParam.isBlank()) ? Integer.parseInt(orderIdParam) : 0;
+                double amt = (amountParam != null && !amountParam.isBlank()) ? Double.parseDouble(amountParam)
+                        : (oid > 0 ? paymentDAO.getOrderAmount(oid) : 0);
+                Payment p = new Payment();
+                p.setOrderId(oid);
+                p.setAmount(amt);
+                double fee = 150.00;
+                req.setAttribute("payment", p);
+                req.setAttribute("deliveryFee", fee);
+                req.setAttribute("subtotal", amt - fee);
+            } catch (Exception ignored) {
+            }
+
             req.setAttribute("errorMessage", "All fields are required.");
             req.getRequestDispatcher("/payment.jsp").forward(req, resp);
             return;
         }
 
-        int    orderId = Integer.parseInt(orderIdParam);
-        double amount  = Double.parseDouble(amountParam);
-        String phone   = mpesaService.normalizePhone(phoneParam);
+        int orderId = Integer.parseInt(orderIdParam);
+        double amount = Double.parseDouble(amountParam);
+        String phone = mpesaService.normalizePhone(phoneParam);
 
         if (!phone.matches("^254\\d{9}$")) {
             Payment payment = new Payment();
             payment.setOrderId(orderId);
             payment.setAmount(amount);
             double deliveryFee = 150.00;
-            req.setAttribute("payment",      payment);
-            req.setAttribute("deliveryFee",  deliveryFee);
-            req.setAttribute("subtotal",     amount - deliveryFee);
+            req.setAttribute("payment", payment);
+            req.setAttribute("deliveryFee", deliveryFee);
+            req.setAttribute("subtotal", amount - deliveryFee);
             req.setAttribute("errorMessage", "Invalid phone number. Enter a valid Safaricom number e.g. 0712345678.");
             req.getRequestDispatcher("/payment.jsp").forward(req, resp);
             return;
@@ -112,10 +138,10 @@ public class PaymentServlet extends HttpServlet {
                 paymentDAO.insertPayment(payment);
                 paymentDAO.updateOrderStatus(orderId, "confirmed");
 
-                session.setAttribute("paymentStatus",   "Completed");
+                session.setAttribute("paymentStatus", "Completed");
                 session.setAttribute("transactionCode", checkoutRequestId);
-                session.setAttribute("paymentOrderId",  orderId);
-                session.setAttribute("paymentAmount",   amount);
+                session.setAttribute("paymentOrderId", orderId);
+                session.setAttribute("paymentAmount", amount);
                 resp.sendRedirect(req.getContextPath() + "/Paymentstatus.jsp");
                 return;
             }
@@ -127,10 +153,11 @@ public class PaymentServlet extends HttpServlet {
                 payment.setOrderId(orderId);
                 payment.setAmount(amount);
                 double deliveryFee = 150.00;
-                req.setAttribute("payment",      payment);
-                req.setAttribute("deliveryFee",  deliveryFee);
-                req.setAttribute("subtotal",     amount - deliveryFee);
-                req.setAttribute("errorMessage", "M-Pesa request failed. Check your credentials or network and try again.");
+                req.setAttribute("payment", payment);
+                req.setAttribute("deliveryFee", deliveryFee);
+                req.setAttribute("subtotal", amount - deliveryFee);
+                req.setAttribute("errorMessage",
+                        "M-Pesa request failed. Check your credentials or network and try again.");
                 req.getRequestDispatcher("/payment.jsp").forward(req, resp);
                 return;
             }
@@ -138,10 +165,10 @@ public class PaymentServlet extends HttpServlet {
             Payment payment = new Payment(orderId, amount, "M-Pesa", checkoutRequestId, "Pending");
             paymentDAO.insertPayment(payment);
 
-            session.setAttribute("paymentStatus",  "Pending");
+            session.setAttribute("paymentStatus", "Pending");
             session.setAttribute("transactionCode", checkoutRequestId);
-            session.setAttribute("paymentOrderId",  orderId);
-            session.setAttribute("paymentPhone",    phone);
+            session.setAttribute("paymentOrderId", orderId);
+            session.setAttribute("paymentPhone", phone);
 
             resp.sendRedirect(req.getContextPath() + "/Paymentstatus.jsp");
 

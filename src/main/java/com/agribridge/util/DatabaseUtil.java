@@ -1,5 +1,5 @@
 // File: DatabaseUtil.java
-package com.projectmanagement.util;
+package com.agribridge.util;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

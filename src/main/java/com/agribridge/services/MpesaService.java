@@ -22,19 +22,20 @@ public class MpesaService {
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Authorization", "Basic " + encoded);
         conn.setRequestProperty("Content-Type", "application/json");
-        conn.setConnectTimeout(10000);
-        conn.setReadTimeout(10000);
+        conn.setConnectTimeout(30000);
+        conn.setReadTimeout(30000);
 
         int responseCode = conn.getResponseCode();
         System.out.println("[OAuth] Response code: " + responseCode);
 
         if (responseCode == 200) {
             String response = readResponse(conn.getInputStream());
-            System.out.println("[OAuth] Token received successfully.");
+            System.out.println("[OAuth] Token body: " + response);
             return extractJsonValue(response, "access_token");
         } else {
             String errorBody = readResponse(conn.getErrorStream());
-            System.out.println("[OAuth] Failed: " + errorBody);
+            System.err.println("[OAuth] FAILED (HTTP " + responseCode + "): " + errorBody);
+            System.err.println("[OAuth] KEY used: " + MpesaConfig.CONSUMER_KEY);
             return null;
         }
     }
@@ -79,8 +80,8 @@ public class MpesaService {
         conn.setRequestProperty("Authorization", "Bearer " + token);
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setDoOutput(true);
-        conn.setConnectTimeout(15000);
-        conn.setReadTimeout(15000);
+        conn.setConnectTimeout(30000);
+        conn.setReadTimeout(30000);
 
         try (OutputStream os = conn.getOutputStream()) {
             os.write(jsonBody.getBytes(StandardCharsets.UTF_8));
@@ -92,13 +93,14 @@ public class MpesaService {
                 : readResponse(conn.getErrorStream());
 
         System.out.println("[STK] Response code: " + responseCode);
+        System.out.println("[STK] Response body: " + response);
 
         if (responseCode == 200) {
             String checkoutId = extractJsonValue(response, "CheckoutRequestID");
             System.out.println("[STK] STK Push sent. CheckoutRequestID: " + checkoutId);
             return checkoutId;
         } else {
-            System.out.println("[STK] Failed: " + response);
+            System.err.println("[STK] FAILED (HTTP " + responseCode + "): " + response);
             return null;
         }
     }

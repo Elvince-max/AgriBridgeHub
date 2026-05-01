@@ -1,13 +1,25 @@
 <%@ page contentType="text/html" pageEncoding="UTF-8" %>
+<%@ page import="com.agribridge.dao.ProductDAO, com.agribridge.model.Product, java.util.List" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%
+    // Load products directly so the page works without going through a servlet
+    if (request.getAttribute("products") == null) {
+        try {
+            ProductDAO dao = new ProductDAO();
+            List<Product> productList = dao.getAllProducts();
+            request.setAttribute("products", productList);
+        } catch (Exception e) {
+            request.setAttribute("dbError", e.getMessage());
+        }
+    }
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Dairy Collection | EgertonAgriBridgeHub</title>
-    <!-- Tailwind + Fonts + Icons -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
@@ -70,18 +82,18 @@
     <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <c:forEach var="product" items="${products}">
             <div class="product-card bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-200"
-                 data-category="${product.categoryName}" data-name="${product.name.toLowerCase()}">
-                <img src="${product.imageUrl != null ? product.imageUrl : 'https://rethinkrural.raydientrural.com/hubfs/Blog_Photos/Rural_Life/Food/Uses_for_milk_lead.jpg'}" 
+                 data-category="${product.category}" data-name="${product.name.toLowerCase()}">
+                <img src="${not empty product.imagePath ? pageContext.request.contextPath.concat('/ProductServlet?action=viewImage&path=').concat(product.imagePath) : 'https://rethinkrural.raydientrural.com/hubfs/Blog_Photos/Rural_Life/Food/Uses_for_milk_lead.jpg'}"
                      alt="${product.name}" class="w-full h-48 object-cover">
                 <div class="p-4">
                     <h3 class="font-headline font-bold text-lg text-[#1A1C18]">${product.name}</h3>
-                    <p class="text-stone-500 text-sm mt-1">${product.weight}</p>
+                    <p class="text-stone-500 text-sm mt-1">${product.category}</p>
                     <div class="flex justify-between items-center mt-3">
                         <span class="font-bold text-xl text-[#00450D]">KES <fmt:formatNumber value="${product.price}" pattern="#,##0.00"/></span>
                         <c:choose>
-                            <c:when test="${product.stockQuantity > 0}">
+                            <c:when test="${product.stock > 0}">
                                 <span class="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full">
-                                    ${product.stockQuantity < 10 ? 'Low Stock' : 'In Stock'}
+                                    ${product.stock < 10 ? 'Low Stock' : 'In Stock'}
                                 </span>
                             </c:when>
                             <c:otherwise>
@@ -90,18 +102,23 @@
                         </c:choose>
                     </div>
                     <button class="add-to-cart mt-4 w-full bg-[#835400] hover:bg-[#643f00] text-white font-semibold py-2 rounded-xl transition flex items-center justify-center gap-2"
-                            data-id="${product.productId}" 
-                            data-name="${product.name}" 
-                            data-price="${product.price}" 
-                            data-stock="${product.stockQuantity}" 
-                            data-image="${product.imageUrl != null ? product.imageUrl : ''}">
+                            data-id="${product.id}"
+                            data-name="${product.name}"
+                            data-price="${product.price}"
+                            data-stock="${product.stock}"
+                            data-image="">
                         <span class="material-symbols-outlined text-base">shopping_cart</span> Add to Cart
                     </button>
                 </div>
             </div>
         </c:forEach>
         <c:if test="${empty products}">
-            <div class="col-span-full text-center py-12 text-stone-500">No products available. Check back soon!</div>
+            <div class="col-span-full text-center py-12 text-stone-500">
+                <c:choose>
+                    <c:when test="${not empty dbError}">Database error: ${dbError}</c:when>
+                    <c:otherwise>No products available. Check back soon!</c:otherwise>
+                </c:choose>
+            </div>
         </c:if>
     </div>
 </div>
@@ -117,7 +134,8 @@
             <span class="text-stone-500">Cart Total:</span>
             <span id="cartTotal" class="font-bold text-2xl text-[#00450D]">KES 0.00</span>
         </div>
-        <button id="payNowBtn" class="bg-[#835400] hover:bg-[#643f00] text-white px-6 py-2 rounded-full font-semibold transition">
+        <button id="payNowBtn" class="bg-[#835400] hover:bg-[#643f00] text-white px-6 py-2 rounded-full font-semibold transition"
+                onclick="window.location.href='quickOrder'">
             Pay Now
         </button>
     </div>

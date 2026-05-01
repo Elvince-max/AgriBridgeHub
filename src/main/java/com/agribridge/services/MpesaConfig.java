@@ -39,12 +39,23 @@ public class MpesaConfig {
         return value.trim();
     }
 
-    // Loads mpesa.properties from the project root
     private static Properties loadFileProperties() {
         Properties props = new Properties();
+        // Load from classpath (src/main/resources/mpesa.properties → WEB-INF/classes/)
+        try (java.io.InputStream is = MpesaConfig.class.getClassLoader()
+                .getResourceAsStream("mpesa.properties")) {
+            if (is != null) {
+                props.load(is);
+                System.out.println("[MpesaConfig] Loaded mpesa.properties from classpath.");
+                return props;
+            }
+        } catch (IOException e) {
+            System.err.println("[MpesaConfig] Could not read mpesa.properties: " + e.getMessage());
+        }
+
+        // Fallback: try project root relative path (for local IDE run)
         File f = new File("mpesa.properties");
         if (!f.exists()) f = new File("../mpesa.properties");
-
         if (f.exists()) {
             try (FileInputStream fis = new FileInputStream(f)) {
                 props.load(fis);
@@ -54,6 +65,7 @@ public class MpesaConfig {
                 System.err.println("[MpesaConfig] Could not read mpesa.properties: " + e.getMessage());
             }
         }
+        System.err.println("[MpesaConfig] mpesa.properties not found on classpath or disk.");
         return props;
     }
 
