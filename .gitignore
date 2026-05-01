@@ -16,6 +16,6 @@ nb-configuration.xml
 .DS_Store
 Thumbs.db
 
-# ── Credentials / Secrets (never commit these) ─────────
+# ── Credentials / Secrets (never commit real values) ───
 mpesa.properties
 secrets.properties
