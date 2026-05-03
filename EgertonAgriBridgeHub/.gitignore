@@ -1,0 +1,26 @@
+# NetBeans private files
+nbproject/private/
+
+# Build outputs
+build/
+dist/
+target/
+*.class
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+
+# Local secrets/configs
+.env
+*.properties.local
+secrets.properties
+mpesa.properties
+db.properties
